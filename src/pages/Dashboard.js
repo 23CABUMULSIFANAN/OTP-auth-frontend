@@ -83,18 +83,22 @@ const Dashboard = () => {
   const [filter, setFilter] = useState('All');
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await API.get('/dashboard/');
-        setUser(res.data);
-      } catch (err) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        navigate('/login');
+  const fetchUser = async () => {
+    try {
+      const res = await API.get('/user-dashboard/');
+      if (res.data.role === 'admin') {
+        navigate('/admin-dashboard');
+        return;
       }
-    };
-    fetchUser();
-  }, [navigate]);
+      setUser(res.data.profile);
+    } catch (err) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      navigate('/login');
+    }
+  };
+  fetchUser();
+}, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
