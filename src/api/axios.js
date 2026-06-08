@@ -4,7 +4,6 @@ const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api',
 });
 
-// Attach JWT token to every request automatically
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -12,5 +11,30 @@ API.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Auto refresh token when expired
+API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      try {
+        const refresh = localStorage.getItem('refresh_token');
+        const res = await axios.post(
+          `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api'}/token/refresh/`,
+          { refresh }
+        );
+        localStorage.setItem('access_token', res.data.access);
+        original.headers.Authorization = `Bearer ${res.data.access}`;
+        return API(original);
+      } catch (err) {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default API;
