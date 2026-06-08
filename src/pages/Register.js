@@ -23,22 +23,31 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const res = await API.post('/register/', formData);
-      setMessage(res.data.message);
-      setStep(2);
-    } catch (err) {
-      setError(err.response?.data?.email?.[0] || 
-               err.response?.data?.phone?.[0] || 
-               'Registration failed. Try again.');
-    } finally {
-      setLoading(false);
+ const handleRegister = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  try {
+    const res = await API.post('/register/', formData);
+    setMessage(res.data.message);
+    setStep(2);
+  } catch (err) {
+    const data = err.response?.data;
+    if (data?.email) {
+      setError(data.email[0]);
+    } else if (data?.phone) {
+      setError(data.phone[0]);
+    } else if (data?.password) {
+      setError(data.password[0]);
+    } else if (data?.name) {
+      setError(data.name[0]);
+    } else {
+      setError('Registration failed. Try again.');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
@@ -90,23 +99,23 @@ const Register = () => {
               required
             />
             <input
-              style={styles.input}
-              type="text"
-              name="phone"
-              placeholder="Phone Number"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
+  style={styles.input}
+  type="text"
+  name="phone"
+  placeholder="Phone Number (10 digits, no hyphen)"  // ← update this
+  value={formData.phone}
+  onChange={handleChange}
+  required
+/>
             <input
-              style={styles.input}
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
+  style={styles.input}
+  type="password"
+  name="password"
+  placeholder="Password (minimum 6 characters)"  // ← update this
+  value={formData.password}
+  onChange={handleChange}
+  required
+/>
             <button style={styles.button} type="submit" disabled={loading}>
               {loading ? 'Sending OTP...' : 'Register'}
             </button>
