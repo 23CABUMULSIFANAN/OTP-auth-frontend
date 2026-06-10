@@ -42,28 +42,20 @@ const Dashboard = () => {
       console.log(err);
     }
   };
-const fetchMyProperties = async () => {
-  try {
-    const res = await API.get('/user-properties/');
-    setMyProperties(res.data.properties);
-  } catch (err) {
-    console.log(err);
-  }
-};
 
-const fetchAllUserProperties = async () => {
-  try {
-    const res = await API.get('/all-properties/');
-    setAllUserProperties(res.data.properties);
-  } catch (err) {
-    console.log(err);
-  }
-};
   const fetchMyProperties = async () => {
     try {
       const res = await API.get('/user-properties/');
-      setAllUserProperties(res.data.properties);
       setMyProperties(res.data.properties);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const fetchAllUserProperties = async () => {
+    try {
+      const res = await API.get('/all-properties/');
+      setAllUserProperties(res.data.properties);
     } catch (err) {
       console.log(err);
     }
@@ -86,6 +78,7 @@ const fetchAllUserProperties = async () => {
     fetchUser();
     fetchSaved();
     fetchMyProperties();
+    fetchAllUserProperties();
   }, [navigate]);
 
   const handleSave = async (property) => {
@@ -124,6 +117,7 @@ const fetchAllUserProperties = async () => {
         beds: 0, baths: 1, sqft: '', image_url: ''
       });
       fetchMyProperties();
+      fetchAllUserProperties();
       alert('Property added successfully!');
     } catch (err) {
       alert('Failed to add property. Please fill all fields.');
@@ -135,6 +129,7 @@ const fetchAllUserProperties = async () => {
       try {
         await API.delete('/user-properties/', { data: { id } });
         fetchMyProperties();
+        fetchAllUserProperties();
       } catch (err) {
         alert('Failed to delete property');
       }
@@ -149,6 +144,13 @@ const fetchAllUserProperties = async () => {
   const filtered = filter === 'All'
     ? properties
     : properties.filter(p => p.status === filter);
+
+  const allCombined = [
+    ...filtered,
+    ...allUserProperties.filter(p =>
+      filter === 'All' ? true : p.status === filter
+    )
+  ];
 
   if (!user) return <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading...</p>;
 
@@ -176,7 +178,7 @@ const fetchAllUserProperties = async () => {
           style={activeTab === 'properties' ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab('properties')}
         >
-          🏠 All Properties
+          🏠 All Properties ({allCombined.length})
         </button>
         <button
           style={activeTab === 'saved' ? styles.tabActive : styles.tab}
@@ -207,8 +209,8 @@ const fetchAllUserProperties = async () => {
             ))}
           </div>
           <div style={styles.grid}>
-            {[...filtered, ...allUserProperties].map((property, index) => (
-              <div key={`${property.id || property.property_id}-${index}`} style={styles.card}>
+            {allCombined.map((property, index) => (
+              <div key={`${property.id}-${index}`} style={styles.card}>
                 <div style={styles.imageWrapper}>
                   <img
                     src={property.image || property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=200&fit=crop'}
@@ -330,7 +332,12 @@ const fetchAllUserProperties = async () => {
                   <option>For Sale</option>
                   <option>For Rent</option>
                 </select>
-                <input style={{ ...styles.formInput, gridColumn: '1 / -1' }} placeholder="Image URL (optional)" value={newProperty.image_url} onChange={e => setNewProperty({ ...newProperty, image_url: e.target.value })} />
+                <input
+                  style={{ ...styles.formInput, gridColumn: '1 / -1' }}
+                  placeholder="Image URL (optional)"
+                  value={newProperty.image_url}
+                  onChange={e => setNewProperty({ ...newProperty, image_url: e.target.value })}
+                />
               </div>
               <button style={styles.submitBtn} onClick={handleAddProperty}>
                 Submit Property
