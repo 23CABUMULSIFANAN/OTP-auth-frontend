@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [savedIds, setSavedIds] = useState([]);
   const [savedProperties, setSavedProperties] = useState([]);
   const [myProperties, setMyProperties] = useState([]);
+  const [allUserProperties, setAllUserProperties] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProperty, setNewProperty] = useState({
     title: '',
@@ -45,6 +46,7 @@ const Dashboard = () => {
   const fetchMyProperties = async () => {
     try {
       const res = await API.get('/user-properties/');
+      setAllUserProperties(res.data.properties);
       setMyProperties(res.data.properties);
     } catch (err) {
       console.log(err);
@@ -85,7 +87,7 @@ const Dashboard = () => {
           location: property.location,
           price: property.price,
           status: property.status,
-          image: property.image
+          image: property.image || property.image_url || ''
         });
         setSavedIds([...savedIds, property.id]);
         setSavedProperties([...savedProperties, { ...property, property_id: property.id }]);
@@ -128,7 +130,9 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  const filtered = filter === 'All' ? properties : properties.filter(p => p.status === filter);
+  const filtered = filter === 'All'
+    ? properties
+    : properties.filter(p => p.status === filter);
 
   if (!user) return <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading...</p>;
 
@@ -187,12 +191,18 @@ const Dashboard = () => {
             ))}
           </div>
           <div style={styles.grid}>
-            {filtered.map(property => (
-              <div key={property.id} style={styles.card}>
+            {[...filtered, ...allUserProperties].map((property, index) => (
+              <div key={`${property.id || property.property_id}-${index}`} style={styles.card}>
                 <div style={styles.imageWrapper}>
-                  <img src={property.image} alt={property.title} style={styles.image} />
+                  <img
+                    src={property.image || property.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=200&fit=crop'}
+                    alt={property.title}
+                    style={styles.image}
+                  />
                   <div style={styles.imageBadges}>
-                    <span style={styles.propertyType}>{property.type}</span>
+                    <span style={styles.propertyType}>
+                      {property.type || property.property_type}
+                    </span>
                     <span style={{ ...styles.statusBadge, backgroundColor: property.status === 'For Sale' ? '#4f46e5' : '#10b981' }}>
                       {property.status}
                     </span>
@@ -207,6 +217,9 @@ const Dashboard = () => {
                 <div style={styles.cardBody}>
                   <h3 style={styles.propertyTitle}>{property.title}</h3>
                   <p style={styles.location}>📍 {property.location}</p>
+                  {property.owner && (
+                    <p style={styles.ownerTag}>🧑 Posted by: {property.owner}</p>
+                  )}
                   <div style={styles.detailsRow}>
                     {property.beds > 0 && <span style={styles.detail}>🛏 {property.beds} Beds</span>}
                     <span style={styles.detail}>🚿 {property.baths} Baths</span>
@@ -236,7 +249,11 @@ const Dashboard = () => {
               {savedProperties.map(property => (
                 <div key={property.property_id} style={styles.card}>
                   <div style={styles.imageWrapper}>
-                    <img src={property.image} alt={property.title} style={styles.image} />
+                    <img
+                      src={property.image || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=200&fit=crop'}
+                      alt={property.title}
+                      style={styles.image}
+                    />
                     <div style={styles.imageBadges}>
                       <span style={{ ...styles.statusBadge, backgroundColor: property.status === 'For Sale' ? '#4f46e5' : '#10b981' }}>
                         {property.status}
@@ -267,8 +284,6 @@ const Dashboard = () => {
       {/* My Properties Tab */}
       {activeTab === 'myproperties' && (
         <div style={styles.savedSection}>
-
-          {/* Add Property Button */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
             <button
               style={styles.addPropertyBtn}
@@ -278,74 +293,28 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* Add Property Form */}
           {showAddForm && (
             <div style={styles.formCard}>
               <h3 style={{ margin: '0 0 20px', color: '#1f2937' }}>Add New Property</h3>
               <div style={styles.formGrid}>
-                <input
-                  style={styles.formInput}
-                  placeholder="Title"
-                  value={newProperty.title}
-                  onChange={e => setNewProperty({ ...newProperty, title: e.target.value })}
-                />
-                <input
-                  style={styles.formInput}
-                  placeholder="Location"
-                  value={newProperty.location}
-                  onChange={e => setNewProperty({ ...newProperty, location: e.target.value })}
-                />
-                <input
-                  style={styles.formInput}
-                  placeholder="Price (e.g. ₹45,00,000)"
-                  value={newProperty.price}
-                  onChange={e => setNewProperty({ ...newProperty, price: e.target.value })}
-                />
-                <input
-                  style={styles.formInput}
-                  placeholder="Size (e.g. 1200 sqft)"
-                  value={newProperty.sqft}
-                  onChange={e => setNewProperty({ ...newProperty, sqft: e.target.value })}
-                />
-                <input
-                  style={styles.formInput}
-                  type="number"
-                  placeholder="Beds"
-                  value={newProperty.beds}
-                  onChange={e => setNewProperty({ ...newProperty, beds: e.target.value })}
-                />
-                <input
-                  style={styles.formInput}
-                  type="number"
-                  placeholder="Baths"
-                  value={newProperty.baths}
-                  onChange={e => setNewProperty({ ...newProperty, baths: e.target.value })}
-                />
-                <select
-                  style={styles.formInput}
-                  value={newProperty.property_type}
-                  onChange={e => setNewProperty({ ...newProperty, property_type: e.target.value })}
-                >
+                <input style={styles.formInput} placeholder="Title" value={newProperty.title} onChange={e => setNewProperty({ ...newProperty, title: e.target.value })} />
+                <input style={styles.formInput} placeholder="Location" value={newProperty.location} onChange={e => setNewProperty({ ...newProperty, location: e.target.value })} />
+                <input style={styles.formInput} placeholder="Price (e.g. ₹45,00,000)" value={newProperty.price} onChange={e => setNewProperty({ ...newProperty, price: e.target.value })} />
+                <input style={styles.formInput} placeholder="Size (e.g. 1200 sqft)" value={newProperty.sqft} onChange={e => setNewProperty({ ...newProperty, sqft: e.target.value })} />
+                <input style={styles.formInput} type="number" placeholder="Beds" value={newProperty.beds} onChange={e => setNewProperty({ ...newProperty, beds: e.target.value })} />
+                <input style={styles.formInput} type="number" placeholder="Baths" value={newProperty.baths} onChange={e => setNewProperty({ ...newProperty, baths: e.target.value })} />
+                <select style={styles.formInput} value={newProperty.property_type} onChange={e => setNewProperty({ ...newProperty, property_type: e.target.value })}>
                   <option>Apartment</option>
                   <option>Villa</option>
                   <option>Commercial</option>
                   <option>Penthouse</option>
                   <option>Plot</option>
                 </select>
-                <select
-                  style={styles.formInput}
-                  value={newProperty.status}
-                  onChange={e => setNewProperty({ ...newProperty, status: e.target.value })}
-                >
+                <select style={styles.formInput} value={newProperty.status} onChange={e => setNewProperty({ ...newProperty, status: e.target.value })}>
                   <option>For Sale</option>
                   <option>For Rent</option>
                 </select>
-                <input
-                  style={{ ...styles.formInput, gridColumn: '1 / -1' }}
-                  placeholder="Image URL (optional)"
-                  value={newProperty.image_url}
-                  onChange={e => setNewProperty({ ...newProperty, image_url: e.target.value })}
-                />
+                <input style={{ ...styles.formInput, gridColumn: '1 / -1' }} placeholder="Image URL (optional)" value={newProperty.image_url} onChange={e => setNewProperty({ ...newProperty, image_url: e.target.value })} />
               </div>
               <button style={styles.submitBtn} onClick={handleAddProperty}>
                 Submit Property
@@ -353,7 +322,6 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* My Properties List */}
           {myProperties.length === 0 ? (
             <div style={styles.emptyState}>
               <p style={styles.emptyText}>🏡 No properties added yet</p>
@@ -386,10 +354,7 @@ const Dashboard = () => {
                     </div>
                     <div style={styles.cardFooter}>
                       <span style={styles.price}>{property.price}</span>
-                      <button
-                        style={styles.deleteBtn}
-                        onClick={() => handleDeleteMyProperty(property.id)}
-                      >
+                      <button style={styles.deleteBtn} onClick={() => handleDeleteMyProperty(property.id)}>
                         Delete
                       </button>
                     </div>
@@ -420,7 +385,7 @@ const styles = {
   hero: { backgroundColor: '#4f46e5', padding: '48px 32px', textAlign: 'center' },
   heroTitle: { color: '#fff', fontSize: '32px', margin: '0 0 8px 0' },
   heroSub: { color: '#c7d2fe', fontSize: '16px', margin: 0 },
-  tabRow: { display: 'flex', gap: '12px', padding: '24px 32px 8px' },
+  tabRow: { display: 'flex', gap: '12px', padding: '24px 32px 8px', flexWrap: 'wrap' },
   tab: { padding: '10px 24px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#555' },
   tabActive: { padding: '10px 24px', backgroundColor: '#4f46e5', border: '1px solid #4f46e5', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#fff', fontWeight: 'bold' },
   filterRow: { display: 'flex', gap: '12px', padding: '8px 32px' },
@@ -437,6 +402,7 @@ const styles = {
   cardBody: { padding: '16px' },
   propertyTitle: { margin: '0 0 6px', fontSize: '16px', color: '#1f2937' },
   location: { fontSize: '13px', color: '#6b7280', margin: '0 0 12px' },
+  ownerTag: { fontSize: '12px', color: '#4f46e5', margin: '0 0 8px', fontStyle: 'italic' },
   detailsRow: { display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' },
   detail: { fontSize: '12px', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '6px' },
   cardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
