@@ -3,118 +3,83 @@ import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 
 const properties = [
-  {
-    id: 1,
-    title: 'Modern Apartment',
-    location: 'Chennai, Tamil Nadu',
-    price: '₹45,00,000',
-    type: 'Apartment',
-    beds: 2,
-    baths: 2,
-    sqft: '1,200 sqft',
-    status: 'For Sale',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=200&fit=crop',
-  },
-  {
-    id: 2,
-    title: 'Independent Villa',
-    location: 'Coimbatore, Tamil Nadu',
-    price: '₹85,00,000',
-    type: 'Villa',
-    beds: 4,
-    baths: 3,
-    sqft: '2,800 sqft',
-    status: 'For Sale',
-    image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=200&fit=crop',
-  },
-  {
-    id: 3,
-    title: 'Commercial Office Space',
-    location: 'Tiruppur, Tamil Nadu',
-    price: '₹25,000 / month',
-    type: 'Commercial',
-    beds: 0,
-    baths: 2,
-    sqft: '900 sqft',
-    status: 'For Rent',
-    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=200&fit=crop',
-  },
-  {
-    id: 4,
-    title: 'Budget Studio Flat',
-    location: 'Madurai, Tamil Nadu',
-    price: '₹18,00,000',
-    type: 'Apartment',
-    beds: 1,
-    baths: 1,
-    sqft: '650 sqft',
-    status: 'For Sale',
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=200&fit=crop',
-  },
-  {
-    id: 5,
-    title: 'Luxury Penthouse',
-    location: 'Chennai, Tamil Nadu',
-    price: '₹2,10,00,000',
-    type: 'Penthouse',
-    beds: 5,
-    baths: 4,
-    sqft: '4,500 sqft',
-    status: 'For Sale',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=200&fit=crop',
-  },
-  {
-    id: 6,
-    title: 'Cozy 2BHK Flat',
-    location: 'Salem, Tamil Nadu',
-    price: '₹12,000 / month',
-    type: 'Apartment',
-    beds: 2,
-    baths: 1,
-    sqft: '950 sqft',
-    status: 'For Rent',
-    image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=200&fit=crop',
-  },
+  { id: 1, title: 'Modern Apartment', location: 'Chennai, Tamil Nadu', price: '₹45,00,000', type: 'Apartment', beds: 2, baths: 2, sqft: '1,200 sqft', status: 'For Sale', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=200&fit=crop' },
+  { id: 2, title: 'Independent Villa', location: 'Coimbatore, Tamil Nadu', price: '₹85,00,000', type: 'Villa', beds: 4, baths: 3, sqft: '2,800 sqft', status: 'For Sale', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=200&fit=crop' },
+  { id: 3, title: 'Commercial Office Space', location: 'Tiruppur, Tamil Nadu', price: '₹25,000 / month', type: 'Commercial', beds: 0, baths: 2, sqft: '900 sqft', status: 'For Rent', image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=200&fit=crop' },
+  { id: 4, title: 'Budget Studio Flat', location: 'Madurai, Tamil Nadu', price: '₹18,00,000', type: 'Apartment', beds: 1, baths: 1, sqft: '650 sqft', status: 'For Sale', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=200&fit=crop' },
+  { id: 5, title: 'Luxury Penthouse', location: 'Chennai, Tamil Nadu', price: '₹2,10,00,000', type: 'Penthouse', beds: 5, baths: 4, sqft: '4,500 sqft', status: 'For Sale', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=200&fit=crop' },
+  { id: 6, title: 'Cozy 2BHK Flat', location: 'Salem, Tamil Nadu', price: '₹12,000 / month', type: 'Apartment', beds: 2, baths: 1, sqft: '950 sqft', status: 'For Rent', image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=200&fit=crop' },
 ];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [filter, setFilter] = useState('All');
+  const [activeTab, setActiveTab] = useState('properties');
+  const [savedIds, setSavedIds] = useState([]);
+  const [savedProperties, setSavedProperties] = useState([]);
 
   useEffect(() => {
-  const fetchUser = async () => {
-    try {
-      const res = await API.get('/user-dashboard/');
-      if (res.data.role === 'admin') {
-        navigate('/admin-dashboard');
-        return;
+    const fetchUser = async () => {
+      try {
+        const res = await API.get('/user-dashboard/');
+        if (res.data.role === 'admin') {
+          navigate('/admin-dashboard');
+          return;
+        }
+        setUser(res.data.profile);
+      } catch (err) {
+        localStorage.clear();
+        navigate('/login');
       }
-      setUser(res.data.profile);
+    };
+    fetchUser();
+    fetchSaved();
+  }, [navigate]);
+
+  const fetchSaved = async () => {
+    try {
+      const res = await API.get('/saved-properties/');
+      setSavedProperties(res.data.saved_properties);
+      setSavedIds(res.data.saved_properties.map(p => p.property_id));
     } catch (err) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      navigate('/login');
+      console.log(err);
     }
   };
-  fetchUser();
-}, [navigate]);
+
+  const handleSave = async (property) => {
+    try {
+      if (savedIds.includes(property.id)) {
+        await API.delete('/save-property/', {
+          data: { property_id: property.id }
+        });
+        setSavedIds(savedIds.filter(id => id !== property.id));
+        setSavedProperties(savedProperties.filter(p => p.property_id !== property.id));
+      } else {
+        await API.post('/save-property/', {
+          property_id: property.id,
+          title: property.title,
+          location: property.location,
+          price: property.price,
+          status: property.status,
+          image: property.image
+        });
+        setSavedIds([...savedIds, property.id]);
+        setSavedProperties([...savedProperties, { ...property, property_id: property.id }]);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.clear();
     navigate('/login');
   };
 
-  const filtered =
-    filter === 'All'
-      ? properties
-      : properties.filter((p) => p.status === filter);
+  const filtered = filter === 'All' ? properties : properties.filter(p => p.status === filter);
 
-  if (!user)
-    return (
-      <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading...</p>
-    );
+  if (!user) return <p style={{ textAlign: 'center', marginTop: '60px' }}>Loading...</p>;
 
   return (
     <div style={styles.page}>
@@ -124,83 +89,129 @@ const Dashboard = () => {
         <h2 style={styles.brand}>🏠 PropFinder</h2>
         <div style={styles.userInfo}>
           <span style={styles.welcomeText}>Hello, {user.name}</span>
-          <button style={styles.logoutBtn} onClick={handleLogout}>
-            Logout
-          </button>
+          <button style={styles.logoutBtn} onClick={handleLogout}>Logout</button>
         </div>
       </div>
 
       {/* Hero */}
       <div style={styles.hero}>
         <h1 style={styles.heroTitle}>Find Your Dream Property</h1>
-        <p style={styles.heroSub}>
-          Browse verified listings across Tamil Nadu
-        </p>
+        <p style={styles.heroSub}>Browse verified listings across Tamil Nadu</p>
       </div>
 
-      {/* Filter Buttons */}
-      <div style={styles.filterRow}>
-        {['All', 'For Sale', 'For Rent'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={filter === f ? styles.filterActive : styles.filterBtn}
-          >
-            {f}
-          </button>
-        ))}
+      {/* Tabs */}
+      <div style={styles.tabRow}>
+        <button
+          style={activeTab === 'properties' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab('properties')}
+        >
+          🏠 All Properties
+        </button>
+        <button
+          style={activeTab === 'saved' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab('saved')}
+        >
+          ❤️ Saved ({savedIds.length})
+        </button>
       </div>
 
-      {/* Property Cards */}
-      <div style={styles.grid}>
-        {filtered.map((property) => (
-          <div key={property.id} style={styles.card}>
-
-            {/* Image with badges */}
-            <div style={styles.imageWrapper}>
-              <img
-                src={property.image}
-                alt={property.title}
-                style={styles.image}
-              />
-              <div style={styles.imageBadges}>
-                <span style={styles.propertyType}>{property.type}</span>
-                <span
-                  style={{
-                    ...styles.statusBadge,
-                    backgroundColor:
-                      property.status === 'For Sale' ? '#4f46e5' : '#10b981',
-                  }}
-                >
-                  {property.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Card Body */}
-            <div style={styles.cardBody}>
-              <h3 style={styles.propertyTitle}>{property.title}</h3>
-              <p style={styles.location}>📍 {property.location}</p>
-
-              <div style={styles.detailsRow}>
-                {property.beds > 0 && (
-                  <span style={styles.detail}>🛏 {property.beds} Beds</span>
-                )}
-                <span style={styles.detail}>🚿 {property.baths} Baths</span>
-                <span style={styles.detail}>📐 {property.sqft}</span>
-              </div>
-
-              <div style={styles.cardFooter}>
-                <span style={styles.price}>{property.price}</span>
-                <button style={styles.viewBtn}>View Details</button>
-              </div>
-            </div>
-
+      {/* All Properties Tab */}
+      {activeTab === 'properties' && (
+        <>
+          <div style={styles.filterRow}>
+            {['All', 'For Sale', 'For Rent'].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                style={filter === f ? styles.filterActive : styles.filterBtn}
+              >
+                {f}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Footer */}
+          <div style={styles.grid}>
+            {filtered.map(property => (
+              <div key={property.id} style={styles.card}>
+                <div style={styles.imageWrapper}>
+                  <img src={property.image} alt={property.title} style={styles.image} />
+                  <div style={styles.imageBadges}>
+                    <span style={styles.propertyType}>{property.type}</span>
+                    <span style={{ ...styles.statusBadge, backgroundColor: property.status === 'For Sale' ? '#4f46e5' : '#10b981' }}>
+                      {property.status}
+                    </span>
+                  </div>
+                  {/* Save Button */}
+                  <button
+                    style={{
+                      ...styles.saveBtn,
+                      backgroundColor: savedIds.includes(property.id) ? '#ef4444' : 'rgba(0,0,0,0.4)'
+                    }}
+                    onClick={() => handleSave(property)}
+                  >
+                    {savedIds.includes(property.id) ? '❤️' : '🤍'}
+                  </button>
+                </div>
+                <div style={styles.cardBody}>
+                  <h3 style={styles.propertyTitle}>{property.title}</h3>
+                  <p style={styles.location}>📍 {property.location}</p>
+                  <div style={styles.detailsRow}>
+                    {property.beds > 0 && <span style={styles.detail}>🛏 {property.beds} Beds</span>}
+                    <span style={styles.detail}>🚿 {property.baths} Baths</span>
+                    <span style={styles.detail}>📐 {property.sqft}</span>
+                  </div>
+                  <div style={styles.cardFooter}>
+                    <span style={styles.price}>{property.price}</span>
+                    <button style={styles.viewBtn}>View Details</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Saved Properties Tab */}
+      {activeTab === 'saved' && (
+        <div style={styles.savedSection}>
+          {savedProperties.length === 0 ? (
+            <div style={styles.emptyState}>
+              <p style={styles.emptyText}>🤍 No saved properties yet</p>
+              <p style={styles.emptySubText}>Click the heart icon on any property to save it</p>
+            </div>
+          ) : (
+            <div style={styles.grid}>
+              {savedProperties.map(property => (
+                <div key={property.property_id} style={styles.card}>
+                  <div style={styles.imageWrapper}>
+                    <img src={property.image} alt={property.title} style={styles.image} />
+                    <div style={styles.imageBadges}>
+                      <span style={{ ...styles.statusBadge, backgroundColor: property.status === 'For Sale' ? '#4f46e5' : '#10b981' }}>
+                        {property.status}
+                      </span>
+                    </div>
+                    <button
+                      style={{ ...styles.saveBtn, backgroundColor: '#ef4444' }}
+                      onClick={() => handleSave({ id: property.property_id, ...property })}
+                    >
+                      ❤️
+                    </button>
+                  </div>
+                  <div style={styles.cardBody}>
+                    <h3 style={styles.propertyTitle}>{property.title}</h3>
+                    <p style={styles.location}>📍 {property.location}</p>
+                    <div style={styles.cardFooter}>
+                      <span style={styles.price}>{property.price}</span>
+                      <button style={styles.viewBtn}>View Details</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={styles.footer}>
         <p>© 2025 PropFinder. Logged in as {user.email}</p>
       </div>
@@ -210,159 +221,42 @@ const Dashboard = () => {
 };
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    backgroundColor: '#f4f6f9',
-    fontFamily: 'sans-serif',
-  },
-
-  // Navbar
-  navbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: '16px 32px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  },
+  page: { minHeight: '100vh', backgroundColor: '#f4f6f9', fontFamily: 'sans-serif' },
+  navbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '16px 32px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
   brand: { margin: 0, color: '#4f46e5', fontSize: '22px' },
   userInfo: { display: 'flex', alignItems: 'center', gap: '16px' },
   welcomeText: { fontSize: '14px', color: '#555' },
-  logoutBtn: {
-    padding: '8px 16px',
-    backgroundColor: '#ef4444',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-
-  // Hero
-  hero: {
-    backgroundColor: '#4f46e5',
-    padding: '48px 32px',
-    textAlign: 'center',
-  },
+  logoutBtn: { padding: '8px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  hero: { backgroundColor: '#4f46e5', padding: '48px 32px', textAlign: 'center' },
   heroTitle: { color: '#fff', fontSize: '32px', margin: '0 0 8px 0' },
   heroSub: { color: '#c7d2fe', fontSize: '16px', margin: 0 },
-
-  // Filter
-  filterRow: {
-    display: 'flex',
-    gap: '12px',
-    padding: '24px 32px 8px',
-  },
-  filterBtn: {
-    padding: '8px 20px',
-    backgroundColor: '#fff',
-    border: '1px solid #ddd',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    color: '#555',
-  },
-  filterActive: {
-    padding: '8px 20px',
-    backgroundColor: '#4f46e5',
-    border: '1px solid #4f46e5',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-
-  // Grid
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '24px',
-    padding: '16px 32px 40px',
-  },
-
-  // Card
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-  },
-
-  // Image
-  imageWrapper: {
-    position: 'relative',
-    height: '180px',
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  imageBadges: {
-    position: 'absolute',
-    top: '12px',
-    left: '12px',
-    right: '12px',
-    display: 'flex',
-    justifyContent: 'space-between',
-  },
-  propertyType: {
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    color: '#fff',
-    padding: '4px 10px',
-    borderRadius: '12px',
-    fontSize: '12px',
-  },
-  statusBadge: {
-    color: '#fff',
-    padding: '4px 10px',
-    borderRadius: '12px',
-    fontSize: '12px',
-  },
-
-  // Card body
+  tabRow: { display: 'flex', gap: '12px', padding: '24px 32px 8px' },
+  tab: { padding: '10px 24px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#555' },
+  tabActive: { padding: '10px 24px', backgroundColor: '#4f46e5', border: '1px solid #4f46e5', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: '#fff', fontWeight: 'bold' },
+  filterRow: { display: 'flex', gap: '12px', padding: '8px 32px' },
+  filterBtn: { padding: '8px 20px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '20px', cursor: 'pointer', fontSize: '14px', color: '#555' },
+  filterActive: { padding: '8px 20px', backgroundColor: '#4f46e5', border: '1px solid #4f46e5', borderRadius: '20px', cursor: 'pointer', fontSize: '14px', color: '#fff', fontWeight: 'bold' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px', padding: '16px 32px 40px' },
+  card: { backgroundColor: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' },
+  imageWrapper: { position: 'relative', height: '180px', overflow: 'hidden' },
+  image: { width: '100%', height: '100%', objectFit: 'cover' },
+  imageBadges: { position: 'absolute', top: '12px', left: '12px', right: '12px', display: 'flex', justifyContent: 'space-between' },
+  propertyType: { backgroundColor: 'rgba(0,0,0,0.45)', color: '#fff', padding: '4px 10px', borderRadius: '12px', fontSize: '12px' },
+  statusBadge: { color: '#fff', padding: '4px 10px', borderRadius: '12px', fontSize: '12px' },
+  saveBtn: { position: 'absolute', bottom: '12px', right: '12px', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   cardBody: { padding: '16px' },
   propertyTitle: { margin: '0 0 6px', fontSize: '16px', color: '#1f2937' },
   location: { fontSize: '13px', color: '#6b7280', margin: '0 0 12px' },
-  detailsRow: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-    flexWrap: 'wrap',
-  },
-  detail: {
-    fontSize: '12px',
-    color: '#6b7280',
-    backgroundColor: '#f3f4f6',
-    padding: '4px 8px',
-    borderRadius: '6px',
-  },
-  cardFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  detailsRow: { display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' },
+  detail: { fontSize: '12px', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '6px' },
+  cardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   price: { fontSize: '16px', fontWeight: 'bold', color: '#4f46e5' },
-  viewBtn: {
-    padding: '8px 14px',
-    backgroundColor: '#4f46e5',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '13px',
-  },
-
-  // Footer
-  footer: {
-    textAlign: 'center',
-    padding: '20px',
-    color: '#9ca3af',
-    fontSize: '13px',
-    borderTop: '1px solid #e5e7eb',
-  },
+  viewBtn: { padding: '8px 14px', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
+  savedSection: { padding: '16px 32px 40px' },
+  emptyState: { textAlign: 'center', padding: '60px 20px' },
+  emptyText: { fontSize: '24px', color: '#9ca3af', margin: '0 0 8px' },
+  emptySubText: { fontSize: '14px', color: '#9ca3af' },
+  footer: { textAlign: 'center', padding: '20px', color: '#9ca3af', fontSize: '13px', borderTop: '1px solid #e5e7eb' },
 };
 
 export default Dashboard;
