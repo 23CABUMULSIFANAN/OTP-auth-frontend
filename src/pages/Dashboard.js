@@ -42,7 +42,32 @@ const Dashboard = () => {
       console.log(err);
     }
   };
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const res = await API.get('/user-dashboard/');
+      if (res.data.role === 'admin') {
+        navigate('/admin-dashboard');
+        return;
+      }
+      setUser(res.data.profile);
+    } catch (err) {
+      localStorage.clear();
+      navigate('/login');
+    }
+  };
+  fetchUser();
+  fetchSaved();
+  fetchMyProperties();
+  fetchAllUserProperties();
 
+  // Auto refresh all properties every 30 seconds
+  const interval = setInterval(() => {
+    fetchAllUserProperties();
+  }, 30000);
+
+  return () => clearInterval(interval);
+}, [navigate]);
   const fetchMyProperties = async () => {
     try {
       const res = await API.get('/user-properties/');
